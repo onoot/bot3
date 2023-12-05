@@ -21,11 +21,14 @@ const mainChatId = process.env.MAIN_ID;
 const ANOTHER_CHAT_ID = process.env.GROUP_CHAT;
 const PERSONAL_CHAT = process.env.PERSONAL_CHAT;
 
+const directoryPath = 'photo/';
+
 const bot = new TelegramBot(token, { polling: true });
 
 // Запускайте парсинг каждый час
 setInterval(() => parserPhoto(), 14_400_000); // 14_400_000 миллисекунд = 4 часа
 setInterval(() => upDateRas(), 3_600_000); // 3_600_000 миллисекунд = 1 час
+setInterval(() => rmPhoto(), 86_400_000); // 86_400_000 миллисекунд = 24 часа
 
 //Получение даты
 function date(dayOf) {
@@ -79,6 +82,35 @@ async function isBeforeTargetTime(targetHour) {
 
     // Check if the adjusted hour is before the target hour
     return now.getHours() < targetHour;
+}
+async function rmPhoto(){
+    // Чтение файлов в директории
+    fs.readdir(directoryPath, (err, files) => {
+        if (err) {
+            console.error('Ошибка чтения директории:', err);
+            return;
+        }
+
+        // Проход по каждому файлу
+        files.forEach((file) => {
+            // Извлечение даты из имени файла
+            const fileNameWithoutExtension = path.parse(file).name;
+            const fileDate = new Date(fileNameWithoutExtension);
+
+            // Сравнение с текущей датой
+            if (fileDate < new Date(date())) {
+                // Удаление файла
+                const filePath = path.join(directoryPath, file);
+                fs.unlink(filePath, (unlinkErr) => {
+                    if (unlinkErr) {
+                        console.error('Ошибка удаления файла:', unlinkErr);
+                    } else {
+                        console.log(`Файл ${file} удален успешно.`);
+                    }
+                });
+            }
+        });
+    });
 }
 
 
